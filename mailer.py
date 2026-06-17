@@ -58,13 +58,19 @@ def send(
     preview_articles: list[dict],
     gmail_address: str,
     app_password: str,
-    to_email: str,
+    to_email,
 ) -> None:
+    # Accept a single address or a list/comma-separated string of recipients.
+    if isinstance(to_email, str):
+        recipients = [a.strip() for a in to_email.split(",") if a.strip()]
+    else:
+        recipients = [a.strip() for a in to_email if a.strip()]
+
     subject = date.strftime("Daily Digest — %a %b %#d")
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = formataddr(("RSS Digest", gmail_address))
-    msg["To"] = to_email
+    msg["To"] = ", ".join(recipients)
     # Date and Message-ID are not added automatically by MIMEMultipart; without
     # them Gmail/receiving servers are more likely to flag the mail as spam.
     msg["Date"] = formatdate(localtime=True)
@@ -74,4 +80,4 @@ def send(
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
         smtp.login(gmail_address, app_password)
-        smtp.sendmail(gmail_address, to_email, msg.as_string())
+        smtp.sendmail(gmail_address, recipients, msg.as_string())
