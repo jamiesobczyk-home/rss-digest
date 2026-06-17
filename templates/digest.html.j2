@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Digest — {{ date_str }}</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <span class="site-label">Daily Digest</span>
+      <h1 class="header-date">{{ date.strftime("%A, %B %#d, %Y") }}</h1>
+      <div class="header-meta">
+        {{ total_articles }} article{{ 's' if total_articles != 1 else '' }} across {{ sections|length }} section{{ 's' if sections|length != 1 else '' }}
+        &nbsp;&middot;&nbsp;
+        <a href="index.html">Archive &rarr;</a>
+      </div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-inner">
+      <span class="toc-label">Sections:</span>
+      {% for section in sections %}
+        <a href="#{{ section.name | lower | replace(' ', '-') }}">{{ section.name }}</a>{% if not loop.last %} &middot; {% endif %}
+      {% endfor %}
+    </div>
+  </nav>
+
+  <main class="content">
+    {% for section in sections %}
+    <section id="{{ section.name | lower | replace(' ', '-') }}" class="digest-section">
+      <div class="section-heading">
+        <h2>{{ section.name }}</h2>
+        <span class="badge">{{ section.total }} article{{ 's' if section.total != 1 else '' }}</span>
+      </div>
+
+      {% for article in section.top %}
+      <article class="article-card">
+        <div class="article-meta">
+          <span class="article-source">{{ article.source }}</span>
+          <span class="article-sep">&middot;</span>
+          <time class="article-time">{{ article.published.strftime("%#I:%M %p") if article.published else "" }}</time>
+        </div>
+        <h3 class="article-title">
+          <a href="{{ article.link }}" target="_blank" rel="noopener">{{ article.title }}</a>
+        </h3>
+        {% if article.summary %}
+        <p class="article-summary">{{ article.summary }}</p>
+        {% endif %}
+      </article>
+      {% endfor %}
+
+      {% if section.overflow %}
+      <details class="overflow">
+        <summary>{{ section.overflow|length }} more article{{ 's' if section.overflow|length != 1 else '' }}</summary>
+        <ul class="overflow-list">
+          {% for article in section.overflow %}
+          <li>
+            <a href="{{ article.link }}" target="_blank" rel="noopener">{{ article.title }}</a>
+            <span class="overflow-source">— {{ article.source }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </details>
+      {% endif %}
+    </section>
+    {% endfor %}
+  </main>
+
+  <footer class="site-footer">
+    <a href="index.html">&larr; All digests</a>
+    &nbsp;&middot;&nbsp;
+    Generated {{ date_str }}
+  </footer>
+</body>
+</html>
