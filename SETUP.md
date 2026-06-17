@@ -142,18 +142,34 @@ Check your inbox and visit your GitHub Pages URL.
 
 ## Step 9 — Schedule daily at 6:00 AM
 
-Run once as Administrator (right-click PowerShell → "Run as administrator"):
-
 ```
 python setup_task.py
 ```
 
-This registers a Windows Task Scheduler task called `RssDigest` that runs every morning at 6:00 AM.
+This registers a Windows Task Scheduler task called `RssDigest` that runs every
+morning at 6:00 AM. It runs as your user (so it can use your Claude Code login),
+sets the working directory to this project, catches up if a scheduled run was
+missed (PC asleep/off), and runs on battery.
+
+You do **not** need an Administrator shell. Two exceptions where you do:
+
+- **Wake-from-sleep at exactly 6:00 AM** — setting that flag needs admin. Without
+  it the digest still runs as soon as the PC next wakes; with it the PC wakes on
+  time. Run `python setup_task.py` from an Administrator PowerShell to enable it.
+- **Replacing an existing task that was created elevated** — if you previously
+  registered `RssDigest` from an admin shell, overwriting it also needs admin.
 
 To verify it was created:
 ```
-schtasks /Query /TN RssDigest
+schtasks /Query /TN RssDigest /V /FO LIST
 ```
+
+To test it immediately (does a real run — pushes and emails):
+```
+schtasks /Run /TN RssDigest
+```
+
+Logs for every run (scheduled or manual) are appended to `logs\digest.log`.
 
 To remove it:
 ```
