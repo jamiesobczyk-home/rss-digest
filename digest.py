@@ -79,6 +79,12 @@ def main(dry_run: bool = False) -> None:
     base_url = os.environ["GITHUB_PAGES_BASE_URL"].rstrip("/")
     opml_path = os.environ.get("OPML_PATH", "opml/feedly.opml")
     state_path = os.environ.get("STATE_FILE", "seen_articles.json")
+    # Feedly sections to leave out of the digest (comma-separated, case-insensitive).
+    exclude_categories = {
+        c.strip().lower()
+        for c in os.environ.get("EXCLUDE_CATEGORIES", "Comics,Photography").split(",")
+        if c.strip()
+    }
 
     # Resolve relative config paths against the script dir, not the current
     # working directory, so scheduled runs (CWD = System32) still find them.
@@ -110,6 +116,15 @@ def main(dry_run: bool = False) -> None:
 
     print("[rss-digest] Parsing OPML...")
     categories = fetcher.parse_opml(opml_path)
+
+    # Drop excluded sections before fetching (saves the network work too).
+    if exclude_categories:
+        dropped = [c for c in categories if c.lower() in exclude_categories]
+        for c in dropped:
+            del categories[c]
+        if dropped:
+            print(f"[rss-digest] Excluding sections: {', '.join(sorted(dropped))}")
+
     total_feeds = sum(len(v) for v in categories.values())
     print(f"[rss-digest] Found {len(categories)} categories, {total_feeds} feeds")
 
