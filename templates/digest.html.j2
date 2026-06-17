@@ -41,7 +41,7 @@
         <div class="article-meta">
           <span class="article-source">{{ article.source }}</span>
           <span class="article-sep">&middot;</span>
-          <time class="article-time">{{ article.published.strftime("%#I:%M %p") if article.published else "" }}</time>
+          <time class="article-time">{{ (article.published | localtime).strftime("%#I:%M %p") if article.published else "" }}</time>
         </div>
         <h3 class="article-title">
           <a href="{{ article.link }}" target="_blank" rel="noopener">{{ article.title }}</a>

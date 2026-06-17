@@ -10,7 +10,7 @@ Usage:
 import argparse
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -23,8 +23,55 @@ import state
 import summarizer
 
 
+def _force_utf8_output() -> None:
+    """Ensure stdout/stderr can encode non-ASCII log chars (—, →, …).
+
+    Under Task Scheduler stdout is a redirected pipe that defaults to the
+    locale codepage (cp1252 on US Windows), so printing those characters
+    raises UnicodeEncodeError and kills the run. Reconfigure to UTF-8.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
+class _Tee:
+    """Write to several streams at once (console + log file)."""
+
+    def __init__(self, *streams):
+        self._streams = streams
+
+    def write(self, data):
+        for s in self._streams:
+            s.write(data)
+            s.flush()
+
+    def flush(self):
+        for s in self._streams:
+            s.flush()
+
+
+def _start_logging(repo_dir: Path):
+    """Tee stdout/stderr to logs/digest.log so scheduled runs leave a trace."""
+    log_dir = repo_dir / "logs"
+    log_dir.mkdir(exist_ok=True)
+    log_file = open(log_dir / "digest.log", "a", encoding="utf-8", errors="replace")
+    log_file.write(f"\n===== run started {datetime.now().astimezone():%Y-%m-%d %H:%M:%S %z} =====\n")
+    sys.stdout = _Tee(sys.stdout, log_file)
+    sys.stderr = _Tee(sys.stderr, log_file)
+    return log_file
+
+
 def main(dry_run: bool = False) -> None:
-    load_dotenv()
+    _force_utf8_output()
+
+    repo_dir = Path(__file__).resolve().parent
+    _start_logging(repo_dir)
+    # Load .env explicitly from the script dir so a foreign CWD (e.g. Task
+    # Scheduler's System32) can't change which file is loaded.
+    load_dotenv(repo_dir / ".env")
 
     gmail_address = os.environ["GMAIL_ADDRESS"]
     gmail_password = os.environ["GMAIL_APP_PASSWORD"]
@@ -33,11 +80,20 @@ def main(dry_run: bool = False) -> None:
     opml_path = os.environ.get("OPML_PATH", "opml/feedly.opml")
     state_path = os.environ.get("STATE_FILE", "seen_articles.json")
 
-    repo_dir = str(Path(__file__).parent)
+    # Resolve relative config paths against the script dir, not the current
+    # working directory, so scheduled runs (CWD = System32) still find them.
+    if not os.path.isabs(opml_path):
+        opml_path = str(repo_dir / opml_path)
+    if not os.path.isabs(state_path):
+        state_path = str(repo_dir / state_path)
+
+    repo_dir = str(repo_dir)
     docs_dir = os.path.join(repo_dir, "docs")
     templates_dir = os.path.join(repo_dir, "templates")
 
-    now = datetime.now(timezone.utc)
+    # Local time, so the digest's date/filename reflect the reader's day
+    # rather than UTC (which rolls over mid-evening in the Americas).
+    now = datetime.now().astimezone()
     date_str = now.strftime("%Y-%m-%d")
 
     print(f"[rss-digest] {date_str} — starting")

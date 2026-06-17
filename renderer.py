@@ -6,10 +6,13 @@ from jinja2 import Environment, FileSystemLoader
 
 
 def _env(templates_dir: str) -> Environment:
-    return Environment(
+    env = Environment(
         loader=FileSystemLoader(templates_dir),
         autoescape=True,
     )
+    # Convert tz-aware (UTC) article timestamps to the local timezone for display.
+    env.filters["localtime"] = lambda dt: dt.astimezone() if dt else dt
+    return env
 
 
 def _split_articles(articles: list[dict], top_n: int = 10) -> tuple[list, list]:

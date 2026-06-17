@@ -1,9 +1,11 @@
 import asyncio
 import json
 import os
+import random
 import re
 import shutil
 import subprocess
+import time
 import warnings
 
 import requests
@@ -21,6 +23,9 @@ REQUEST_TIMEOUT = 8
 CONCURRENCY = int(os.environ.get("SUMMARIZER_CONCURRENCY", "4"))
 CLI_TIMEOUT = int(os.environ.get("SUMMARIZER_CLI_TIMEOUT", "90"))
 MODEL = os.environ.get("SUMMARIZER_MODEL", "claude-haiku-4-5-20251001")
+# Retries cover transient CLI failures and rate limits (Pro plans can throttle
+# a 50+ call burst). Backoff is exponential with jitter.
+MAX_RETRIES = int(os.environ.get("SUMMARIZER_RETRIES", "3"))
 
 SYSTEM_PROMPT = (
     "You are a concise news summarizer. Summarize the provided article in 2-3 sentences "
@@ -80,13 +85,12 @@ def _fetch_article_text(url: str) -> str:
         return ""
 
 
-def _summarize_with_cli(cli: str, title: str, body: str) -> str | None:
-    """Summarize one article via the headless Claude Code CLI.
+def _run_cli_once(cli: str, prompt: str) -> tuple[str | None, bool]:
+    """Run one CLI invocation. Returns (summary_or_None, retryable).
 
-    Uses the caller's existing Claude Code login (no API key). Returns the
-    summary text, or None on any failure so the caller can fall back.
+    retryable is True when the failure looks transient (rate limit, timeout,
+    network) and a retry is worth attempting.
     """
-    prompt = f"Title: {title}\n\n{body}"
     cmd = [
         cli,
         "-p", prompt,
@@ -106,19 +110,44 @@ def _summarize_with_cli(cli: str, title: str, body: str) -> str | None:
             encoding="utf-8",
             timeout=CLI_TIMEOUT,
         )
+    except subprocess.TimeoutExpired:
+        return None, True
     except Exception:
-        return None
+        return None, False
 
     if result.returncode != 0:
-        return None
+        blob = (result.stdout or "") + (result.stderr or "")
+        retryable = bool(re.search(r"rate.?limit|429|overloaded|529|timeout", blob, re.I))
+        return None, retryable
     try:
         data = json.loads(result.stdout)
     except (json.JSONDecodeError, ValueError):
-        return None
+        return None, False
     if data.get("is_error"):
-        return None
+        status = str(data.get("api_error_status") or "")
+        subtype = str(data.get("subtype") or "")
+        retryable = bool(re.search(r"429|529|rate|overload|timeout", status + subtype, re.I))
+        return None, retryable
     summary = (data.get("result") or "").strip()
-    return summary or None
+    return (summary or None), False
+
+
+def _summarize_with_cli(cli: str, title: str, body: str) -> str | None:
+    """Summarize one article via the headless Claude Code CLI, with retries.
+
+    Uses the caller's existing Claude Code login (no API key). Returns the
+    summary text, or None after exhausting retries so the caller can fall back.
+    """
+    prompt = f"Title: {title}\n\n{body}"
+    for attempt in range(MAX_RETRIES):
+        summary, retryable = _run_cli_once(cli, prompt)
+        if summary is not None:
+            return summary
+        if not retryable or attempt == MAX_RETRIES - 1:
+            return None
+        # Exponential backoff with jitter: ~2s, ~4s, ~8s
+        time.sleep((2 ** (attempt + 1)) + random.uniform(0, 1))
+    return None
 
 
 async def _summarize_one(

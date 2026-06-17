@@ -2,13 +2,14 @@ import smtplib
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formataddr, formatdate, make_msgid
 
 
 def _build_html(date: datetime, page_url: str, preview_articles: list[dict]) -> str:
     date_label = date.strftime("%A, %B %#d, %Y")
     articles_html = ""
     for a in preview_articles:
-        pub = a["published"].strftime("%b %#d, %#I:%M %p") if a.get("published") else ""
+        pub = a["published"].astimezone().strftime("%b %#d, %#I:%M %p") if a.get("published") else ""
         articles_html += f"""
         <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid #e5e7eb;">
           <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">{a.get('category','')} &middot; {a.get('source','')} &middot; {pub}</div>
@@ -62,8 +63,12 @@ def send(
     subject = date.strftime("Daily Digest — %a %b %#d")
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = gmail_address
+    msg["From"] = formataddr(("RSS Digest", gmail_address))
     msg["To"] = to_email
+    # Date and Message-ID are not added automatically by MIMEMultipart; without
+    # them Gmail/receiving servers are more likely to flag the mail as spam.
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = make_msgid(domain=gmail_address.split("@")[-1])
     msg.attach(MIMEText(_build_text(date, page_url, preview_articles), "plain"))
     msg.attach(MIMEText(_build_html(date, page_url, preview_articles), "html"))
 
