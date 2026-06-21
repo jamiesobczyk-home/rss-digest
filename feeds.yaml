@@ -1,0 +1,152 @@
+# rss-digest feed list  (replaces the Feedly OPML export)
+#
+# Each top-level key is a category = one section in the digest.
+# Add a feed by putting its URL on a new line under the right category.
+# The text after '#' on each line is just the feed's name (ignored by the reader).
+# To create a new section, add a new top-level key with its own list.
+#
+# Note: Comics and Photography are still skipped at digest time via
+# EXCLUDE_CATEGORIES in .env — they're kept here as the full source list.
+
+"Cloud":
+  - "https://azure.microsoft.com/en-us/blog/feed/"  # Microsoft Azure Blog
+  - "https://architectelevator.com/feed.xml"  # The Architect Elevator
+  - "http://www.awsarchitectureblog.com/atom.xml"  # AWS Architecture Blog
+
+"Security":
+  - "https://dailydarkweb.net/feed/"  # Daily Dark Web
+  - "http://www.us-cert.gov/current/index.rdf"  # Alerts
+
+"Photography":
+  - "http://feeds.feedburner.com/photographybb"  # PhotographyBB RSS Feed
+  - "http://jamiesobczyk36511.wordpress.com/feed/"  # Jamie Sobczyk's 365 For 2011
+  - "http://guytal.com/wordpress/feed/"  # Guy Tal Photography Journal
+  - "http://www.biguglypix.com/feeds/posts/default"  # The Big Ugly
+  - "http://georgebarr.blogspot.com/feeds/posts/default"  # Behind The Lens
+  - "http://feeds.feedburner.com/GuyCollierPhotography"  # Wedding Photographer Hampshire, Wedding Photographer Surrey, Sussex, Berkshire, Winchester, London, Guildford, Basingstoke, England
+  - "http://feeds.feedburner.com/OlafBathke-TheAdventureOfBeingAPhotographer"  # OLAF BATHKE - The  Adventure  of  Being  a  Photographer
+  - "http://feeds.feedburner.com/photographyblog"  # Photography Blog - News
+  - "http://feeds.feedburner.com/blogspot/WOBq"  # Strobist
+  - "http://feeds.feedburner.com/OnlinePhotoResourcePhotographyTipsAndTools"  # Online Photo Resource | Photography Tips and Tools
+  - "http://feeds.feedburner.com/Akelstudio"  # Technical Secrets of Studio Photography blog
+  - "http://fadedandblurred.com/feed/"  # Faded & Blurred
+  - "http://christinakahlerphotography.blogspot.com/feeds/posts/default"  # christina kahler photography
+  - "http://www.pixelatedimage.com/blog/feed/"  # PixelatedImage Blog
+  - "http://www.completedigitalphotography.com/?feed=rss2"  # Complete Digital Photography
+  - "http://goingpro2010.com/feed/"  # (title unknown)
+  - "http://mony365.blogspot.com/feeds/posts/default"  # Mony's Project of 365 Foto's
+  - "http://content.photojojo.com/feed/"  # Photojojo
+  - "http://www.alesserphotographer.com/rss"  # A Lesser Photographer
+  - "http://www.humansofnewyork.com/rss"  # Humans of New York
+  - "http://digitalprotalk.blogspot.com/feeds/posts/default"  # Digital ProTalk
+  - "http://www.nickpagephotography.com/tutorials?format=RSS"  # RSS Feed
+  - "http://www.kylefoto.com/feed/rss2/"  # Calgary & World Photographer Kyle Marquardt (Kylefoto)
+  - "http://www.jeffreychapman.com/culturalphotographer/feed/"  # Cultural Humanitarian World Photographer Jeffrey Chapman
+  - "http://feeds.feedburner.com/DigitalPhotographySchool"  # Digital Photography School
+  - "http://www.dcviews.com/dcviews.xml"  # Digital camera, imaging and photography news
+  - "http://feeds.feedburner.com/Psychologyforphotographerscom"  # psychologyforphotographers.com
+  - "http://abeautifulanarchy.com/feed/"  # A Beautiful Anarchy
+  - "http://feeds.feedburner.com/PhotoCascadiaBlog"  # Photo Cascadia
+  - "http://z.about.com/6/g/photography/b/rss2.xml?r=9F"  # About.com Photography
+  - "https://craftandvision.com/blogs/all.atom"  # Craft & Vision
+  - "http://www.earthboundlight.com/subscribe/phototips.xml"  # Earthbound Light Photography Tips
+  - "http://www.popphoto.com/rss.xml"  # Popphoto V2
+  - "http://feeds.feedburner.com/erinmanning/pAEt"  # Erin Manning
+  - "http://wherethegoldbeesdream.blogspot.com/feeds/posts/default"  # Where the Gold Bees Dream
+  - "http://feeds.feedburner.com/frederickvan"  # FrederickVan - Photography Industry News, Reviews, and Interviews.
+  - "http://www.nickpagephotography.com/blog?format=RSS"  # My Blog - Nick Page Photography
+  - "http://www.pixiq.com/rss.xml"  # Pixiq
+  - "http://feeds.feedburner.com/SimonGarnier-Photoblog"  # Simon Garnier - Photoblog
+  - "http://strobist.blogspot.com/feeds/posts/default"  # Strobist
+  - "http://www.brooksjensenarts.com/kokoro.xml"  # Kokoro - Wandering Through a Photographic Life
+  - "http://www.ronmartblog.com/feeds/posts/default"  # Ron Martinsen's Photography Blog
+  - "http://feeds.feedburner.com/improvephotography"  # Improve Photography
+  - "http://lightroomkillertips.com/feed/"  # Adobe Photoshop Lightroom Killer Tips
+  - "http://www.tipsfromthetopfloor.com/wp-rss2.php"  # PHOTOGRAPHY TIPS FROM THE TOP FLOOR
+  - "http://feeds.feedburner.com/xequalsblog"  # X-Equals - Click. Download. Smile.
+  - "http://rebekkagudleifs.com/blog/feed/"  # Rebekka Guðleifsdóttir
+  - "http://learnmyshot.com/rss.php"  # Learn My Shot - Latest Lessons
+  - "http://feeds.feedburner.com/craftandvision"  # Craft & Vision » Blog
+  - "http://feeds.wired.com/wired/culture/art"  # Wired Art
+  - "http://feeds.feedburner.com/photofocus/ZuKV"  # Photofocus
+  - "http://feeds.feedburner.com/VirtualPhotographyStudio-DigitalPhotographyBusinessGuideToResourcesProductsAndInformation"  # Virtual Photography Studio - Resources for photographers
+  - "http://feeds.feedburner.com/Blogartwolfecom"  # blog.artwolfe.com
+  - "http://thomashawk.com/feed"  # Thomas Hawk Digital Connection
+  - "http://blog.shutterbug.com/rss/nonstandard_rss.xml"  # Shutterbug Blogs RSS Feed
+  - "http://bandersonphotography.blogspot.com/feeds/posts/default"  # Becky Anderson Photography
+  - "http://www.mattsanderson.co.uk/feed/"  # Matt Sanderson Photography
+  - "http://www.catherinehall.net/blog/feed/"  # Catherine Hall
+  - "http://feeds.feedburner.com/jmg-galleries"  # JMG-Galleries - Jim M. Goldstein Photography
+  - "http://craftandvision.com/collections/podcasts.atom"  # Craft & Vision
+  - "http://www.scottkelby.com/blog/feed"  # Scott Kelby's Photoshop Insider Blog » Photoshop & Digital Photography Techniques, Tutorials, Books, Reviews & More
+  - "http://www.dpreview.com/feeds/news.xml"  # News: Digital Photography Review (dpreview.com)
+
+"Comics":
+  - "http://howardtayler.com/feed/"  # Howard Tayler
+  - "http://feeds.feedburner.com/LookingForGroup?format=xml"  # Looking For Group
+  - "http://www.junipercomic.com/?feed=rss2"  # Juniper
+  - "http://www.d20monkey.com/feed/"  # d20monkey
+  - "http://wapsisquare.com/feed/"  # Wapsi Square
+  - "http://www.tabletitans.com/feed"  # Table Titans
+  - "http://www.giantitp.com/comics/oots.rss"  # Order of the Stick
+  - "http://silmarillionproject.tumblr.com/rss"  # The Silmarillion Project
+  - "http://www.askleroy.net/rss/schlockmercenary.pl"  # Schlock Mercenary
+  - "http://www.girlgeniusonline.com/ggmain.rss"  # Girl Genius
+  - "http://www.grrlpowercomic.com/feed"  # Grrl Power - A webcomic about superheroines.
+  - "http://dresdencodak.com/feed/"  # Dresden Codak
+  - "http://xkcd.com/rss.xml"  # xkcd.com
+
+"AI":
+  - "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_news.xml"  # Anthropic News
+  - "https://rss.beehiiv.com/feeds/2R3C6Bt5wj.xml"  # The Rundown AI
+  - "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_research.xml"  # Anthropic Research
+  - "https://blog.openai.com/rss/"  # OpenAI 
+
+"Cisco":
+  - "http://blogs.cisco.com/rss/news/"  # Cisco Executive Platform Blog
+  - "http://blog.thousandeyes.com/feed/"  # Internet and Cloud Intelligence Blog | ThousandEyes
+  - "http://www.cisco.com/assets/cdc_content_elements/rss/products/products.xml"  # Cisco Product Launches
+  - "http://blogs.cisco.com/feed/"  # Cisco Blogs
+  - "http://blogs.cisco.com/rss/datacenter/"  # Cisco Data Center Blog
+  - "http://www.cisco.com/web/feeds/products/end_of_life_rss.xml"  # RSS Feed for End
+  - "http://blogs.cisco.com/rss/innovation/"  # Cisco Innovation Blog
+
+"Tech":
+  - "http://rss.slashdot.org/Slashdot/slashdot"  # Slashdot
+  - "http://www.engadget.com/rss-full.xml"  # Engadget
+  - "https://www.microsoft.com/en-us/microsoft-365/blog/audience/enterprise/feed/"  # Microsoft 365 for Enterprise | Microsoft 365 Blog
+  - "https://news.ycombinator.com/rss"  # Hacker News
+  - "https://techcommunity.microsoft.com/t5/s/gxcuf89792/rss/board?board.id=MicrosoftTeamsBlog"  # Microsoft Teams Blog articles
+  - "http://martinfowler.com/bliki/bliki.atom"  # Martin Fowler
+  - "http://www.informationweek.com/rss_simple.asp?f_n=630&f_ln=Strategic%20CIO"  # informationweek
+  - "https://www.microsoft.com/en-us/microsoft-365/blog/feed/"  # Microsoft 365 Blog
+  - "http://www.datacenterknowledge.com/feed/"  # datacenterknowledge
+  - "http://blogs.microsoft.com/feed/"  # The Official Microsoft Blog
+  - "http://www.darkreading.com/rss/all.xml"  # Dark Reading
+
+"Networking":
+  - "http://searchsdn.techtarget.com/rss/SDN-news-and-market-trends.xml"  # Search Networking Resources and Information from TechTarget
+  - "http://researchcenter.paloaltonetworks.com/feed/"  # Palo Alto Networks Blog
+  - "http://www.networkcomputing.com/rss/all.xml"  # Network Computing
+
+"Education":
+  - "http://campustechnology.com/rss-feeds/all-articles.aspx"  # Campus Technology: All Articles
+
+"Must Read":
+  - "http://craftandvision.com/collections/podcasts.atom"  # Craft & Vision
+
+"Cisco Security":
+  - "http://tools.cisco.com/security/center/psirtrss20/CiscoSecurityAdvisory.xml"  # Cisco Security Advisory
+  - "http://tools.cisco.com/security/center/cyberRiskReport_20.xml"  # Cyber Risk Reports
+  - "http://tools.cisco.com/security/center/psirtrss20/CiscoSecurityNotice.xml"  # Cisco Security Notice Feed data is not available at this time
+  - "http://tools.cisco.com/security/center/mitigationBulletinReport_20.xml"  # Cisco Applied Mitigation Bulletins
+  - "http://tools.cisco.com/security/center/psirtrss20/CiscoSecurityResponse.xml"  # Cisco Security Response
+  - "http://tools.cisco.com/security/center/threatOutbreak_20.xml"  # Threat Outbreak Alerts
+  - "http://tools.cisco.com/security/center/eventResponses_20.xml"  # Cisco Event Responses
+
+"Misc":
+  - "http://feeds.gawker.com/lifehacker/vip"  # Lifehacker
+  - "http://feeds.feedburner.com/disneyfoodblog/feed"  # the disney food blog
+
+"Uncategorized":
+  - "http://thebloggess.com/feed/"  # TheBloggess.com
