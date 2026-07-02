@@ -84,12 +84,33 @@ def render_index(
     return out_path
 
 
-def pick_preview_articles(sections: list[dict], n: int = 3) -> list[dict]:
-    """Pick the first n summarized articles across all sections for the email preview."""
+def pick_preview_articles(
+    sections: list[dict], n: int = 5, exclude: set[str] | None = None
+) -> list[dict]:
+    """Pick up to n summarized articles for the email preview, one per category.
+
+    Spreads picks across categories round-robin: one article from each category
+    first, then a second from each, and so on, until n are collected or the
+    articles run out. Categories in `exclude` (case-insensitive) are skipped —
+    they still appear on the online digest page, just not in the email.
+    """
+    exclude = {c.lower() for c in (exclude or set())}
+    included = [s for s in sections if s["name"].lower() not in exclude]
+
     preview = []
-    for section in sections:
-        for article in section["top"]:
-            preview.append({**article, "category": section["name"]})
-            if len(preview) >= n:
-                return preview
+    round_idx = 0
+    # Keep cycling through categories until we have n or no category has an
+    # article left at the current depth.
+    while len(preview) < n:
+        added_this_round = False
+        for section in included:
+            if round_idx < len(section["top"]):
+                article = section["top"][round_idx]
+                preview.append({**article, "category": section["name"]})
+                added_this_round = True
+                if len(preview) >= n:
+                    return preview
+        if not added_this_round:
+            break
+        round_idx += 1
     return preview

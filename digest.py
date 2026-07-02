@@ -160,8 +160,9 @@ def main(dry_run: bool = False) -> None:
     # Page URL for this digest
     page_url = f"{base_url}/{date_str}.html"
 
-    # Preview articles for email
-    preview = renderer.pick_preview_articles(sections, n=3)
+    # Preview articles for email — 5 highlights, omitting the Misc section
+    # (Misc still appears on the online digest page, just not in the email).
+    preview = renderer.pick_preview_articles(sections, n=5, exclude={"Misc"})
 
     if dry_run:
         print("\n[dry-run] Skipping git push and email send.")
