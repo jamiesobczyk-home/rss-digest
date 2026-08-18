@@ -103,17 +103,76 @@ used. The Routine's cron replaces it:
 
 Daily, so a UTC rollover only shifts the hour — no weekday problem.
 
-## Cost — measure before committing
+## Cost — measured, 2026-08-18
 
-The trivial CLI test cost **$0.26**, almost all of it cache-creation on a ~42k
-system prompt. `summarizer.py` makes one call per article, top 10 per category,
-concurrency 4. If per-call overhead stays near that, a 40–50 article day is
-**$10–13**, every day.
+**A full run costs $0.38. That is ~$11/month, ~$140/year.**
 
-`--exclude-dynamic-system-prompt-sections` is already passed, which helps. But
-measure a real run before turning this on daily. If it is expensive, batching
-several articles per call is the obvious lever and a much smaller change than
-re-architecting.
+Measured by running `digest.py --dry-run` end to end in a cloud container, with a
+wrapper around the CLI logging every invocation's reported `total_cost_usd`.
+
+| | |
+|---|---|
+| CLI calls | 28 |
+| Errors | 0 |
+| Model | `claude-haiku-4-5-20251001` |
+| **Total** | **$0.3825** |
+| Mean / call | $0.0137 |
+| Median / call | $0.0122 |
+| Range | $0.0094 – $0.0429 |
+| Wall clock | 1m23s |
+| Cache created / read | 117k / 441k tokens |
+| Output | 11k tokens |
+
+**An earlier estimate in this file said $10–13/day. That was wrong by ~30x.** It
+came from timing a bare `claude -p` call that inherited the *session's* model
+(Opus) rather than the model the summarizer actually pins — `SUMMARIZER_MODEL`
+defaults to Haiku 4.5. Always measure through the real code path.
+
+Caveats on the figure:
+
+- This was a cold run: empty state, so the full 48-hour window counted as new —
+  75 articles found, 28 summarized after the top-10-per-category cap. Steady
+  state is cap-bound and should land at or below this, not above.
+- 42 of 117 feeds were in scope (`Comics` and `Photography` excluded), giving 11
+  categories, 6 of which had new articles.
+- Cache reads (441k) outweigh cache creation (117k), so the concurrency-4 batch
+  is reusing the system prompt well. Batching articles per call would cut cost
+  further but is not needed at this price.
+
+**Verdict: cost is not a reason to hold this back.**
+
+## Confirmed working in a cloud container
+
+The same dry run proves the whole pipeline runs on Linux with no code changes
+beyond the blockers listed above:
+
+```
+[rss-digest] Found 11 categories, 42 feeds
+[rss-digest] 75 new articles across 6 categories
+[rss-digest] Summarizing 28 articles...
+[rss-digest] Summaries complete
+[rss-digest] Wrote docs/2026-08-18.html
+```
+
+Feed fetching, summarization via the CLI, rendering and the email preview all
+worked. The feed list was reconstructed from `feeds.yaml` into OPML for the test,
+which is direct evidence that wiring `feeds.yaml` up properly is the right fix
+for blocker 1 — the data in it is complete and correct.
+
+**Note `%#d` did not fire during this run.** The render path that uses it was not
+hit with a value that breaks, or glibc tolerated it here. Do not read this as the
+strftime problem being imaginary; it is still in five files and should be fixed.
+
+## Two nits found by running it
+
+- **`--dry-run` still requires the mail env vars.** `digest.py:76` reads
+  `os.environ["GMAIL_ADDRESS"]` before the dry-run branch, so it raises `KeyError`
+  without them even though it never sends. Move the lookup after the branch, or
+  default it.
+- **`--dry-run` writes into `docs/` anyway.** It skips push and email but still
+  renders over `docs/<date>.html` and `docs/index.html`, dirtying the working
+  tree — and on a day the real run has already published, it overwrites that
+  page locally. Harmless if you do not commit, but surprising.
 
 ## Failure mode to fix while in here
 
