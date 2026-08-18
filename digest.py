@@ -186,6 +186,16 @@ def main(dry_run: bool = False, no_email: bool = False) -> None:
         print("[rss-digest] Done.")
         return
     else:
+        # Update state BEFORE publishing: the publisher stages
+        # seen_articles.json alongside docs/, and a cloud run starts from a
+        # fresh clone, so state that is not committed is state that is lost.
+        all_ids = [a["id"] for articles in categorized.values() for a in articles]
+        s = state.mark_seen(s, all_ids, date_str)
+        s = state.prune(s)
+        s["last_run"] = now.isoformat()
+        state.save(state_path, s)
+        print(f"[rss-digest] State updated ({len(all_ids)} articles marked seen)")
+
         # Publish to GitHub Pages
         print("[rss-digest] Pushing to GitHub...")
         publisher.push(repo_dir, date_str)
@@ -217,13 +227,6 @@ def main(dry_run: bool = False, no_email: bool = False) -> None:
             mailer.send(now, page_url, preview, gmail_address, gmail_password, to_email)
             print("[rss-digest] Email sent")
 
-    # Update state — mark all processed articles as seen
-    all_ids = [a["id"] for articles in categorized.values() for a in articles]
-    s = state.mark_seen(s, all_ids, date_str)
-    s = state.prune(s)
-    s["last_run"] = now.isoformat()
-    state.save(state_path, s)
-    print(f"[rss-digest] State updated ({len(all_ids)} articles marked seen)")
     print("[rss-digest] Done.")
 
 
