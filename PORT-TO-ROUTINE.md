@@ -1,5 +1,23 @@
 # Porting the digest off the Windows scheduled task
 
+## STATUS: LIVE as of 2026-08-18
+
+Routine `trig_01KkAoPoo7mmDUjfp5ocdyoC` — `0 11 * * *` UTC = **06:00 America/Chicago**,
+bound to the Chief of Staff session. First scheduled run: **2026-08-19 06:06 CDT**.
+
+Verified before scheduling, in this order:
+1. Dry run with **no OPML and no mail credentials** — the true cloud condition.
+   Picked up `feeds.yaml` automatically: 11 categories, 42 feeds, 75 new
+   articles, 28 summarized.
+2. Real run with `--no-email`: rendered, **pushed to `main`**, committed dedupe
+   state, wrote `email_payload.json`. Cost **$0.18**, 28 CLI calls, 0 errors.
+3. Confirmed `https://jamiesobczyk-home.github.io/rss-digest/2026-08-18.html`
+   returns 200 — the page it pushed is live on Pages.
+
+Every blocker below is fixed. The email is sent by the Routine through the
+existing Gmail connection rather than by `mailer.py`, so **the Gmail app password
+never leaves your PC.**
+
 Scoped 2026-08-18. Goal: run the 6 AM digest from a Claude Code cloud Routine so
 it stops depending on Jamie's PC being awake.
 
@@ -260,6 +278,31 @@ linking to a page that does not exist yet.
 If you see that during the overlap, it is expected. It disappears when the task
 is disabled. If you would rather avoid it entirely, disable the task the same day
 the Routine goes live and accept a short unmonitored period instead.
+
+## 5. One gotcha this change created
+
+`seen_articles.json` used to be gitignored and is now **committed**, because a
+cloud run starts from a fresh clone and needs the dedupe state to travel with the
+repo. Your PC has an untracked copy of that file at the same path.
+
+So the next `git pull` on the PC will refuse:
+
+```
+error: Your local changes to the following files would be overwritten by merge:
+        seen_articles.json
+```
+
+Fix it once, keeping your local state as a backup:
+
+```powershell
+cd C:\Github\rss-digest
+move seen_articles.json seen_articles.local.bak
+git pull
+```
+
+After that the repo's copy is authoritative and pulls work normally. Do this
+**before** any manual local run, or the two states diverge and whichever runs
+last wins.
 
 ## 4. What to verify after cutover
 
