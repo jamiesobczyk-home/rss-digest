@@ -31,6 +31,24 @@ def parse_opml(opml_path: str) -> dict[str, list[str]]:
     return categories
 
 
+def parse_feeds_yaml(path: str) -> dict[str, list[str]]:
+    """Return {category: [url, ...]} from feeds.yaml.
+
+    Same shape parse_opml returns. feeds.yaml is the committed replacement for
+    the gitignored Feedly OPML export, so a fresh clone has a feed list.
+    """
+    import yaml
+
+    with open(path, encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+    categories: dict[str, list[str]] = {}
+    for cat, urls in data.items():
+        clean = [u.strip() for u in (urls or []) if isinstance(u, str) and u.strip()]
+        if clean:
+            categories.setdefault(str(cat), []).extend(clean)
+    return categories
+
+
 def _article_id(entry) -> str:
     return entry.get("id") or entry.get("link") or entry.get("title", "")
 

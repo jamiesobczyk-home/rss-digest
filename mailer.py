@@ -3,13 +3,14 @@ from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formataddr, formatdate, make_msgid
+from dtfmt import pfmt
 
 
 def _build_html(date: datetime, page_url: str, preview_articles: list[dict]) -> str:
-    date_label = date.strftime("%A, %B %#d, %Y")
+    date_label = pfmt(date, "%A, %B %#d, %Y")
     articles_html = ""
     for a in preview_articles:
-        pub = a["published"].astimezone().strftime("%b %#d, %#I:%M %p") if a.get("published") else ""
+        pub = pfmt(a["published"].astimezone(), "%b %#d, %#I:%M %p") if a.get("published") else ""
         articles_html += f"""
         <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid #e5e7eb;">
           <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">{a.get('category','')} &middot; {a.get('source','')} &middot; {pub}</div>
@@ -42,7 +43,7 @@ def _build_html(date: datetime, page_url: str, preview_articles: list[dict]) -> 
 
 
 def _build_text(date: datetime, page_url: str, preview_articles: list[dict]) -> str:
-    date_label = date.strftime("%A, %B %#d, %Y")
+    date_label = pfmt(date, "%A, %B %#d, %Y")
     lines = [f"Daily Digest — {date_label}", f"View full digest: {page_url}", "", "Highlights:", ""]
     for a in preview_articles:
         lines.append(f"[{a.get('category','')}] {a['title']}")
@@ -66,7 +67,7 @@ def send(
     else:
         recipients = [a.strip() for a in to_email if a.strip()]
 
-    subject = date.strftime("Daily Digest — %a %b %#d")
+    subject = pfmt(date, "Daily Digest — %a %b %#d")
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = formataddr(("RSS Digest", gmail_address))

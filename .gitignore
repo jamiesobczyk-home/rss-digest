@@ -1,5 +1,6 @@
 .env
-seen_articles.json
+# seen_articles.json is COMMITTED on purpose - cloud runs start from a
+# fresh clone and need the dedupe state to travel with the repo.
 opml/
 logs/
 __pycache__/

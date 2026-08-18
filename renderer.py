@@ -3,6 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
+from dtfmt import pfmt
 
 
 def _env(templates_dir: str) -> Environment:
@@ -12,6 +13,7 @@ def _env(templates_dir: str) -> Environment:
     )
     # Convert tz-aware (UTC) article timestamps to the local timezone for display.
     env.filters["localtime"] = lambda dt: dt.astimezone() if dt else dt
+    env.filters["pfmt"] = lambda dt, pattern: pfmt(dt, pattern) if dt else ""
     return env
 
 
@@ -74,7 +76,7 @@ def render_index(
         date_str = fname.replace(".html", "")
         try:
             dt = datetime.strptime(date_str, "%Y-%m-%d")
-            entries.append({"date_str": date_str, "label": dt.strftime("%A, %B %#d, %Y"), "file": fname})
+            entries.append({"date_str": date_str, "label": pfmt(dt, "%A, %B %#d, %Y"), "file": fname})
         except ValueError:
             pass
 

@@ -8,6 +8,7 @@ Usage:
 """
 
 import argparse
+import json
 import os
 import sys
 from datetime import datetime
@@ -21,6 +22,7 @@ import publisher
 import renderer
 import state
 import summarizer
+from dtfmt import pfmt
 
 
 def _force_utf8_output() -> None:
@@ -64,7 +66,7 @@ def _start_logging(repo_dir: Path):
     return log_file
 
 
-def main(dry_run: bool = False) -> None:
+def main(dry_run: bool = False, no_email: bool = False) -> None:
     _force_utf8_output()
 
     repo_dir = Path(__file__).resolve().parent
@@ -73,9 +75,10 @@ def main(dry_run: bool = False) -> None:
     # Scheduler's System32) can't change which file is loaded.
     load_dotenv(repo_dir / ".env")
 
-    gmail_address = os.environ["GMAIL_ADDRESS"]
-    gmail_password = os.environ["GMAIL_APP_PASSWORD"]
-    to_email = os.environ["DIGEST_TO_EMAIL"]
+    # Mail credentials are only required when this run will actually send.
+    gmail_address = os.environ.get("GMAIL_ADDRESS")
+    gmail_password = os.environ.get("GMAIL_APP_PASSWORD")
+    to_email = os.environ.get("DIGEST_TO_EMAIL")
     base_url = os.environ["GITHUB_PAGES_BASE_URL"].rstrip("/")
     opml_path = os.environ.get("OPML_PATH", "opml/feedly.opml")
     state_path = os.environ.get("STATE_FILE", "seen_articles.json")
@@ -108,14 +111,21 @@ def main(dry_run: bool = False) -> None:
     s = state.load(state_path)
     seen_ids = set(s["seen"].keys())
 
-    # Parse OPML
-    if not os.path.exists(opml_path):
-        print(f"ERROR: OPML file not found at {opml_path}")
-        print("Export your Feedly feeds: Profile → Organize → Export OPML")
-        sys.exit(1)
+    # Feed source: OPML if present, else the committed feeds.yaml. The OPML
+    # export is gitignored, so a fresh clone (any cloud run) has only the YAML.
+    feeds_yaml = os.environ.get("FEEDS_FILE", "feeds.yaml")
+    if not os.path.isabs(feeds_yaml):
+        feeds_yaml = os.path.join(repo_dir, feeds_yaml)
 
-    print("[rss-digest] Parsing OPML...")
-    categories = fetcher.parse_opml(opml_path)
+    if os.path.exists(opml_path):
+        print("[rss-digest] Parsing OPML...")
+        categories = fetcher.parse_opml(opml_path)
+    elif os.path.exists(feeds_yaml):
+        print(f"[rss-digest] No OPML at {opml_path}; using {os.path.basename(feeds_yaml)}")
+        categories = fetcher.parse_feeds_yaml(feeds_yaml)
+    else:
+        print(f"ERROR: no feed list. Looked for OPML at {opml_path} and {feeds_yaml}")
+        sys.exit(1)
 
     # Drop excluded sections before fetching (saves the network work too).
     if exclude_categories:
@@ -169,7 +179,7 @@ def main(dry_run: bool = False) -> None:
         print(f"[dry-run] Digest page: {daily_path}")
         print(f"[dry-run] Page URL would be: {page_url}")
         print("\n[dry-run] Email preview:")
-        print(f"  Subject: {now.strftime('Daily Digest — %a %b %#d')}")
+        print(f"  Subject: {pfmt(now, 'Daily Digest — %a %b %#d')}")
         for a in preview:
             print(f"  - [{a['category']}] {a['title']}")
         print("\n[dry-run] State not updated — articles remain unseen so you can re-run.")
@@ -181,10 +191,31 @@ def main(dry_run: bool = False) -> None:
         publisher.push(repo_dir, date_str)
         print("[rss-digest] Pushed")
 
-        # Send email
-        print("[rss-digest] Sending email...")
-        mailer.send(now, page_url, preview, gmail_address, gmail_password, to_email)
-        print("[rss-digest] Email sent")
+        # Send email, unless the caller is sending it themselves.
+        if no_email:
+            payload = {
+                "subject": pfmt(now, "Daily Digest — %a %b %#d"),
+                "page_url": page_url,
+                "date": date_str,
+                "articles": [
+                    {"category": a["category"], "title": a["title"], "link": a.get("link", "")}
+                    for a in preview
+                ],
+            }
+            payload_path = os.path.join(repo_dir, "email_payload.json")
+            with open(payload_path, "w", encoding="utf-8") as fh:
+                json.dump(payload, fh, indent=2, ensure_ascii=False)
+            print(f"[rss-digest] --no-email: wrote {payload_path} for the caller to send")
+        else:
+            missing = [k for k, v in (("GMAIL_ADDRESS", gmail_address),
+                                      ("GMAIL_APP_PASSWORD", gmail_password),
+                                      ("DIGEST_TO_EMAIL", to_email)) if not v]
+            if missing:
+                print(f"ERROR: cannot send email, missing: {', '.join(missing)}")
+                sys.exit(1)
+            print("[rss-digest] Sending email...")
+            mailer.send(now, page_url, preview, gmail_address, gmail_password, to_email)
+            print("[rss-digest] Email sent")
 
     # Update state — mark all processed articles as seen
     all_ids = [a["id"] for articles in categorized.values() for a in articles]
@@ -199,5 +230,7 @@ def main(dry_run: bool = False) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate daily RSS digest")
     parser.add_argument("--dry-run", action="store_true", help="Skip push and email")
+    parser.add_argument("--no-email", action="store_true",
+                        help="Push and update state, but write email_payload.json instead of sending")
     args = parser.parse_args()
-    main(dry_run=args.dry_run)
+    main(dry_run=args.dry_run, no_email=args.no_email)

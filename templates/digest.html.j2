@@ -10,7 +10,7 @@
   <header class="site-header">
     <div class="header-inner">
       <span class="site-label">Daily Digest</span>
-      <h1 class="header-date">{{ date.strftime("%A, %B %#d, %Y") }}</h1>
+      <h1 class="header-date">{{ date | pfmt("%A, %B %#d, %Y") }}</h1>
       <div class="header-meta">
         {{ total_articles }} article{{ 's' if total_articles != 1 else '' }} across {{ sections|length }} section{{ 's' if sections|length != 1 else '' }}
         &nbsp;&middot;&nbsp;
@@ -41,7 +41,7 @@
         <div class="article-meta">
           <span class="article-source">{{ article.source }}</span>
           <span class="article-sep">&middot;</span>
-          <time class="article-time">{{ (article.published | localtime).strftime("%#I:%M %p") if article.published else "" }}</time>
+          <time class="article-time">{{ (article.published | localtime) | pfmt("%#I:%M %p") }}</time>
         </div>
         <h3 class="article-title">
           <a href="{{ article.link }}" target="_blank" rel="noopener">{{ article.title }}</a>
