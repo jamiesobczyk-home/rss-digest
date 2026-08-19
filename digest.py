@@ -235,13 +235,28 @@ def main(dry_run: bool = False, no_email: bool = False) -> None:
 
         # Send email, unless the caller is sending it themselves.
         if no_email:
+            # Render the message bodies HERE, with the same templates the
+            # local SMTP path uses, and hand them over finished. The caller
+            # used to be given bare title/link tuples and asked to compose
+            # HTML itself, which put an email template in a prompt: on
+            # 2026-08-19 that produced a digest whose body was escaped
+            # entities, so the tags arrived as visible text. There is nothing
+            # left for the caller to get wrong — send these verbatim.
             payload = {
                 "subject": pfmt(now, "Daily Digest — %a %b %#d"),
                 "page_url": page_url,
                 "date": date_str,
                 "generated_at": now.isoformat(),
+                "html_body": mailer._build_html(now, page_url, preview),
+                "text_body": mailer._build_text(now, page_url, preview),
                 "articles": [
-                    {"category": a["category"], "title": a["title"], "link": a.get("link", "")}
+                    {
+                        "category": a.get("category", ""),
+                        "title": a["title"],
+                        "link": a.get("link", ""),
+                        "source": a.get("source", ""),
+                        "summary": a.get("summary", ""),
+                    }
                     for a in preview
                 ],
             }
