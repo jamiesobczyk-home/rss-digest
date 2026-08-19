@@ -107,6 +107,16 @@ def main(dry_run: bool = False, no_email: bool = False) -> None:
 
     print(f"[rss-digest] {date_str} — starting")
 
+    # Clear any payload left by a previous run BEFORE anything can exit early.
+    # The file is gitignored but survives in a reused container, so without
+    # this a run that bails out (no new articles, fetch failure) leaves
+    # yesterday's payload sitting there, perfectly readable — and the caller
+    # emails yesterday's digest under today's date.
+    payload_path = os.path.join(repo_dir, "email_payload.json")
+    if os.path.exists(payload_path):
+        os.remove(payload_path)
+        print("[rss-digest] Cleared stale email_payload.json from a previous run")
+
     # Load state
     s = state.load(state_path)
     seen_ids = set(s["seen"].keys())
@@ -145,7 +155,29 @@ def main(dry_run: bool = False, no_email: bool = False) -> None:
     print(f"[rss-digest] {total_new} new articles across {len(categorized)} categories")
 
     if total_new == 0:
-        print("[rss-digest] No new articles — skipping digest.")
+        # A quiet day and a dead scheduler must not look the same. Record the
+        # run so the commit history is a complete delivery ledger: no
+        # heartbeat for a date means the pipeline genuinely did not run.
+        print(
+            f"[rss-digest] No new articles across {total_feeds} feeds — "
+            "no digest page today."
+        )
+        if dry_run:
+            print("[dry-run] Skipping heartbeat commit.")
+            return
+        s["last_run"] = now.isoformat()
+        s = state.prune(s)
+        state.save(state_path, s)
+        try:
+            publisher.push(
+                repo_dir,
+                date_str,
+                message=f"heartbeat: {date_str} (no new articles)",
+            )
+            print("[rss-digest] Heartbeat committed — pipeline ran, nothing new to publish.")
+        except RuntimeError as exc:
+            print(f"[rss-digest] WARNING: heartbeat commit failed: {exc}")
+        print("[rss-digest] Done.")
         return
 
     # Summarize top-10 per category
@@ -207,12 +239,12 @@ def main(dry_run: bool = False, no_email: bool = False) -> None:
                 "subject": pfmt(now, "Daily Digest — %a %b %#d"),
                 "page_url": page_url,
                 "date": date_str,
+                "generated_at": now.isoformat(),
                 "articles": [
                     {"category": a["category"], "title": a["title"], "link": a.get("link", "")}
                     for a in preview
                 ],
             }
-            payload_path = os.path.join(repo_dir, "email_payload.json")
             with open(payload_path, "w", encoding="utf-8") as fh:
                 json.dump(payload, fh, indent=2, ensure_ascii=False)
             print(f"[rss-digest] --no-email: wrote {payload_path} for the caller to send")

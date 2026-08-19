@@ -165,14 +165,18 @@ async def _summarize_one(
 
         if not raw:
             article["summary"] = article["title"]
+            article["summary_degraded"] = True
             return article
 
         summary = await asyncio.to_thread(_summarize_with_cli, cli, article["title"], raw)
         if summary:
             article["summary"] = summary
         else:
-            # Fallback to truncated raw text
+            # Fallback to truncated raw text. Flag it: the page still renders
+            # and still looks fine, so without this the caller cannot tell an
+            # AI-summarized digest from one where every CLI call failed.
             article["summary"] = raw[:300] + ("…" if len(raw) > 300 else "")
+            article["summary_degraded"] = True
 
         return article
 
@@ -190,4 +194,11 @@ def summarize(articles: list[dict]) -> list[dict]:
     Intelligence runs through the local Claude Code CLI in headless mode, using
     your existing Claude Code login rather than an Anthropic API key.
     """
-    return asyncio.run(_summarize_all_async(articles))
+    result = asyncio.run(_summarize_all_async(articles))
+    degraded = sum(1 for a in result if a.get("summary_degraded"))
+    if degraded:
+        print(
+            f"[rss-digest] WARNING: {degraded}/{len(result)} articles fell back to "
+            "raw text — the Claude CLI did not return a summary for them."
+        )
+    return result
